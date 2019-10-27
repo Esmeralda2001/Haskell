@@ -1,57 +1,60 @@
 module Lib where
 
 
------------------------------
---IMPORTS
------------------------------
+
 import Data.List
 import Data.Function
 import Data.Ord
 import Data.Map (Map)
 import qualified Data.Map as Map
 
------------------------------
---DATATYPES
------------------------------
 
--- | Fruit datatype, each fruit has a height, weight, color score, and a label (the fruit species)
-data Fruit = Fruit {height :: Double, weight :: Double, color :: Double, label :: String}
+-- * DATATYPES
 
------------------------------
---VARIABLES
------------------------------
+-- | Fruit datatype, each fruit has a height, weight, color, and a label (the fruit species)
+data Fruit = Fruit {height :: Double, weight :: Double, color :: Colour, label :: Species}
+
+-- | Colour datatype, consists of the following possible values: Green, Yellow, Red, Orange
+data Colour = Green | Yellow | Orange | Red deriving (Enum, Show)
+
+-- | Species datatype, consists of the following possible values: Apple, Mandarin, Banana, Unknown
+data Species = Apple | Mandarin | Banana | Unknown deriving (Show, Ord, Eq)
+
+
+-- * VARIABLES
 
 test :: Fruit
-test = Fruit 10 40 1 "Unknown"
+test = Fruit 10 40 Green Unknown
 
 orange1 :: Fruit
-orange1 = Fruit 5 25 7 "Orange"
+orange1 = Fruit 5 25 Orange Mandarin
 
 orange2 :: Fruit
-orange2 = Fruit 5 27 7 "Orange"
+orange2 = Fruit 5 27 Orange Mandarin
 
 banana1 :: Fruit
-banana1 = Fruit  15 50 5 "Banana"
+banana1 = Fruit  15 50 Yellow Banana
 
 banana2 :: Fruit
-banana2 = Fruit  17 60 5 "Banana"
+banana2 = Fruit  17 60 Yellow Banana
 
 apple1 :: Fruit
-apple1 = Fruit  10 50 10 "Apple"
+apple1 = Fruit  10 50 Red Apple
 
 apple2 :: Fruit
-apple2 = Fruit  11 55 9 "Apple"
+apple2 = Fruit  11 55 Red Apple
 
 apple3 :: Fruit
-apple3 = Fruit  11 50 1 "Apple"
+apple3 = Fruit  11 50 Green Apple
+
 
 -- | List of fruits
 fruits :: [Fruit]
-fruits = [orange1, orange2, banana1, banana2, apple1, apple2, apple3] 
+fruits = [orange1, orange2, banana1, banana2, apple1, apple2, apple3]
 
-------------------------------
---FUNCTIONS
-------------------------------
+ 
+
+-- * FUNCTIONS
 
 -- | Old function, now replaced with map (fst) 
 setToArr :: [(String, Double)] -> [String]
@@ -59,26 +62,26 @@ setToArr [] = []
 setToArr (x:xs) = fst x : setToArr xs
 
 -- | Finds the highest occurring value in a list
-highestOccurring :: Ord a => [a] -> a --Takes a list of a's, returns a value
-highestOccurring items = head $ minimumBy (flip $ comparing length) . group . sort $ items
+highestOccurring :: Ord a => [a] -> a
+highestOccurring = head . maximumBy (comparing length) . group . sort
 
 -- | Sorts a list of tuples, sorted on b's
-mySort :: Ord b => [(a, b)] -> [(a, b)] --takes a list of tuples, returns a list of tuples (sorted on b)
-mySort = sortBy (compare `on` snd)
+mySort :: Ord b => [(a, b)] -> [(a, b)]
+mySort = sortBy (comparing snd)
 
--- | Old function for distance 
-calcDistance :: Fruit -> Fruit -> Double
-calcDistance f1 f2 = sqrt(((height f1 - height f2)**2) + ((weight f1 - weight f2)**2) + ((color f1 - color f2)**2))
+-- | Old function for distance (commented like this, because the function will otherwise cause errors
+-- | calcDistance :: Fruit -> Fruit -> Double
+-- | calcDistance f1 f2 = sqrt(((height f1 - height f2)**2) + ((weight f1 - weight f2)**2) + ((color f1 - color f2)**2))
 
 -- | New, more general function for calculating the distance
-calcDistance' :: [Double] -> [Double] -> Double --takes two lists of doubles and returns a double
-calcDistance' x y = sqrt(sum(map(**2) (zipWith (-) x y)))
+calcDistance' :: [Double] -> [Double] -> Double
+calcDistance' = ((sqrt . sum . map (** 2)) .) . zipWith (-)
 
--- | Makes a list of tuples containing a string and a double
-distanceArr :: [Fruit] -> Fruit -> [(String, Double)] --takes a list of fruits and a fruit
+-- | Makes a list of tuples containing a Species and a Double
+distanceArr :: [Fruit] -> Fruit -> [(Species, Double)]
 distanceArr [] _ = [] 
-distanceArr (x:xs) f = (label x, calcDistance' [height x, weight x, color x] [height f, weight f, color f]) : distanceArr xs f
+distanceArr (x:xs) f = (label x, calcDistance' [height x, weight x, fromIntegral(fromEnum (color x))] [height f, weight f, fromIntegral(fromEnum (color f))]) : distanceArr xs f
 
 -- | Calculates the k (k = num) neighbors of a fruit, and determines what species the given fruit is
-kNearest :: Int -> Fruit -> String --takes an int and a fruit, returns a string (fruit species)
+kNearest :: Int -> Fruit -> Species
 kNearest k f = highestOccurring $ map fst $ take k $ mySort $ distanceArr fruits f
